@@ -57,7 +57,7 @@
       user-select: none;
     } */
 
-        .auth-lock-message {
+    .auth-lock-message {
       display: none;
     }
 
@@ -2927,7 +2927,7 @@
 <body>
 
   <!-- TOAST -->
-  
+
   <!-- Toast notifications container -->
   <div id="toast-container" class="toast-container"></div>
   <!-- Legacy toast (for compatibility) -->
@@ -4066,15 +4066,17 @@
         setConnStatus('err', 'Offline Mode (localStorage)');
       }
 
-      // ✨ SHOW LOGIN MODAL ON LOAD (only if not logged in)
-      // ✨ SHOW LOGIN MODAL ON LOAD (only if not logged in)
-            // ✨ SHOW LOGIN MODAL ON LOAD (only if not logged in)
+      // ✨ ALWAYS show home screen
+      go('home');
+
+      // ✨ If no user logged in, show login modal AFTER home loads
       if (!state.currentUser) {
         setTimeout(function () {
           openUserAuth('login');
-        }, 300);
+        }, 500);
       }
     }
+
 
     // ─── USER AUTH ──────────────────────────────────────────
     function openUserAuth(tab) {
@@ -4151,7 +4153,7 @@
           setTimeout(function () {
             closeUserAuth();
             updateUserNav();
-            document.body.classList.remove('auth-required');
+            go('home');
             showToast('Welcome back, ' + data.user.username + '!', 'ok', 'Logged In');
           }, 800);
         } else {
@@ -4248,9 +4250,10 @@
           state.currentUser = data.user;
           document.body.classList.remove('auth-required');
 
-          setTimeout(function () {
+                    setTimeout(function () {
             closeUserAuth();
             updateUserNav();
+            go('home');
             showToast('Welcome to ScamShield, ' + data.user.username + '!', 'ok', 'Account Created');
           }, 800);
         } else {
@@ -4267,13 +4270,16 @@
       }
     }
 
-    function userLogout() {
+        function userLogout() {
       if (confirm('Logout from your account?')) {
         localStorage.removeItem(LS_USER_TOKEN);
         localStorage.removeItem(LS_USER_DATA);
         state.currentUser = null;
         updateUserNav();
-        showToast('Logged out successfully', 'ok');
+        showToast('Logged out', 'ok');
+        setTimeout(function() {
+          openUserAuth('login');
+        }, 500);
       }
     }
 
