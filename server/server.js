@@ -54,7 +54,7 @@ app.use('/api/attempt', require('./routes/attempts'));
 app.use('/api/game', require('./routes/games'));
 app.use('/api/modules', require('./routes/modules'));
 app.use('/api/admin', require('./routes/admin'));
-
+app.use('/api/user', require('./routes/userAuth'));
 // ─── ERROR HANDLING ────────────────────────────────────────────────────────
 
 // 404 handler

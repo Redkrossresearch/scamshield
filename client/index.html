@@ -42,16 +42,17 @@
       overflow-x: hidden
     }
 
-    /* Block app when login required */
+    /* Dim app when login required */
     body.auth-required .screen.active {
-      filter: blur(6px) grayscale(40%);
+      opacity: 0.3;
       pointer-events: none;
       user-select: none;
+      transition: opacity 0.3s;
     }
 
     body.auth-required .nav,
     body.auth-required .conn-bar {
-      filter: blur(6px) grayscale(40%);
+      opacity: 0.3;
       pointer-events: none;
       user-select: none;
     }
@@ -4088,13 +4089,12 @@
       }
 
       // ✨ SHOW LOGIN MODAL ON LOAD (only if not logged in)
+      // ✨ SHOW LOGIN MODAL ON LOAD (only if not logged in)
       if (!state.currentUser) {
-        // Hide home screen content slightly
-        document.body.classList.add('auth-required');
-        // Show login modal after a short delay
         setTimeout(function () {
           openUserAuth('login');
         }, 300);
+
       } else {
         document.body.classList.remove('auth-required');
       }
@@ -4157,7 +4157,7 @@
       spinner.style.display = 'inline-block';
 
       try {
-        var res = await fetch(API_BASE + '/auth/login', {
+        var res = await fetch(API_BASE + '/user/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password })
@@ -4259,7 +4259,7 @@
       spinner.style.display = 'inline-block';
 
       try {
-        const res = await fetch(API_BASE + '/auth/signup', {
+        const res = await fetch(API_BASE + '/user/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, email, password, full_name })
