@@ -4989,7 +4989,7 @@
 
       if (API_ENABLED && token && token !== 'local-mode') {
         try {
-          const [statsRes, recentRes, sessionsRes] = await Promise.all([
+          const [statsRes, recentRes, sessionsRes, usersRes] = await Promise.all([
             fetch(API_BASE + '/admin/stats', {
               headers: { 'Authorization': 'Bearer ' + token }
             }),
@@ -5177,9 +5177,9 @@
         danger: true,
         callback: async (confirmed) => {
           if (!confirmed) return;
-          
+
           const token = localStorage.getItem(LS_ADMIN_TOKEN);
-          
+
           if (API_ENABLED && token && token !== 'local-mode') {
             try {
               const res = await fetch(API_BASE + '/admin/user/' + encodeURIComponent(userId), {
@@ -5203,7 +5203,7 @@
               console.warn('API delete user failed:', e.message);
             }
           }
-          
+
           showToast('Cannot delete user in localStorage mode', 'err', 'Not Supported');
         }
       });
@@ -5337,7 +5337,7 @@
 
 
     // ─── EVENT DELEGATION FOR DYNAMICALLY GENERATED BUTTONS ───
-        // ─── EVENT DELEGATION FOR DYNAMICALLY GENERATED BUTTONS ───
+    // ─── EVENT DELEGATION FOR DYNAMICALLY GENERATED BUTTONS ───
     document.addEventListener('click', function (e) {
       const btn = e.target.closest('[data-action]');
       if (!btn) return;
