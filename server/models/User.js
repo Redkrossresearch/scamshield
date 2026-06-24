@@ -44,7 +44,11 @@ const userSchema = new mongoose.Schema({
   average_risk_score: {
     type: Number,
     default: 0
-  }
+  },
+  is_admin: {
+  type: Boolean,
+  default: false
+}
 });
 
 // IMPORTANT: Hash password before saving

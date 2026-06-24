@@ -22,6 +22,89 @@ const router = express.Router();
 router.use(authenticate);
 router.use(requireAdmin);
 
+// ─── GET /api/admin/users ───────────────────────────────
+router.get('/users', async (req, res) => {
+  try {
+    const User = require('../models/User');
+    const Attempt = require('../models/Attempt');
+    const Session = require('../models/Session');
+    
+    const users = await User.find({}).select('-password_hash').sort({ created_at: -1 });
+    
+    const usersWithStats = await Promise.all(users.map(async (user) => {
+      const userAttempts = await Attempt.find({ user_id: user._id });
+      const sessionsCount = await Session.countDocuments({ user_id: user._id });
+      const submitted = userAttempts.filter(a => a.submitted);
+      const avg_risk = submitted.length > 0
+        ? Math.round(submitted.reduce((s, a) => s + (a.risk_score || 0), 0) / submitted.length)
+        : 0;
+      
+      return {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        full_name: user.full_name,
+        created_at: user.created_at,
+        last_login: user.last_login,
+        sessions_count: sessionsCount,
+        attempts_count: userAttempts.length,
+        completions_count: submitted.length,
+        avg_risk_score: avg_risk
+      };
+    }));
+    
+    res.json({ ok: true, users: usersWithStats });
+  } catch (error) {
+    console.error('Users fetch error:', error);
+    res.status(500).json({ ok: false, err: 'Failed to fetch users.' });
+  }
+});
+
+// ─── DELETE /api/admin/user/:userId ─────────────────────
+router.delete('/user/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const User = require('../models/User');
+    const Attempt = require('../models/Attempt');
+    const Session = require('../models/Session');
+    const Game = require('../models/Game');
+    
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ ok: false, err: 'User not found.' });
+    }
+    
+    // Don't allow deleting admins
+    if (user.is_admin) {
+      return res.status(403).json({ ok: false, err: 'Cannot delete admin users.' });
+    }
+    
+    // Delete user
+    await User.deleteOne({ _id: userId });
+    
+    // Delete user's sessions
+    await Session.deleteMany({ user_id: userId });
+    
+    // Delete user's attempts
+    const attResult = await Attempt.deleteMany({ user_id: userId });
+    
+    // Delete user's games
+    const gameResult = await Game.deleteMany({ user_id: userId });
+    
+    res.json({
+      ok: true,
+      message: 'User deleted.',
+      deleted: {
+        attempts: attResult.deletedCount,
+        games: gameResult.deletedCount
+      }
+    });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({ ok: false, err: 'Failed to delete user.' });
+  }
+});
+
 // ─── GET /api/admin/stats ──────────────────────────────────────────────────
 // Dashboard statistics
 router.get('/stats', async (req, res) => {

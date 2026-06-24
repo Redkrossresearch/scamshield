@@ -4250,7 +4250,7 @@
           state.currentUser = data.user;
           document.body.classList.remove('auth-required');
 
-                    setTimeout(function () {
+          setTimeout(function () {
             closeUserAuth();
             updateUserNav();
             go('home');
@@ -4270,14 +4270,14 @@
       }
     }
 
-        function userLogout() {
+    function userLogout() {
       if (confirm('Logout from your account?')) {
         localStorage.removeItem(LS_USER_TOKEN);
         localStorage.removeItem(LS_USER_DATA);
         state.currentUser = null;
         updateUserNav();
         showToast('Logged out', 'ok');
-        setTimeout(function() {
+        setTimeout(function () {
           openUserAuth('login');
         }, 500);
       }
@@ -4969,9 +4969,18 @@
     let activeTab = 'recent';
     function switchTab(tab) {
       activeTab = tab;
-      document.querySelectorAll('.atab').forEach((t, i) => { const tabs = ['recent', 'modules', 'sessions']; t.classList.toggle('active', tabs[i] === tab); });
+      const tabs = ['recent', 'modules', 'sessions', 'users'];
+      document.querySelectorAll('.atab').forEach((t, i) => {
+        t.classList.toggle('active', tabs[i] === tab);
+      });
       document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
-      document.getElementById('tab-' + tab).classList.add('active');
+      const target = document.getElementById('tab-' + tab);
+      if (target) target.classList.add('active');
+
+      // Load users when tab clicked (in case it wasn't loaded initially)
+      if (tab === 'users' && adminData.users) {
+        renderUsers(adminData.users);
+      }
     }
 
     async function loadAdminData() {
@@ -5042,11 +5051,12 @@
 
       // Fallback to localStorage (original code)
       const res = localAdminStats();
-      adminData = { ...res };
+      adminData = { ...res, users: [] };
       renderAdminStats(res.totals);
       renderRecent(res.recent);
       renderModuleStats(res.byModule);
       renderSessions(res.sessions);
+      renderUsers([]); // No users in localStorage mode
 
       // Show localStorage size
       try {
@@ -5124,10 +5134,75 @@
   </tr>`).join('');
     }
 
+    function renderUsers(rows) {
+      const tbody = document.getElementById('tbl-users-body');
+      if (!tbody) {
+        console.error('Users tbody not found');
+        return;
+      }
+      if (!rows || rows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><div>👥</div>No users registered yet</div></td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.map(function (u) {
+        return '<tr>' +
+          '<td style="font-weight:600">' + esc(u.username) + '</td>' +
+          '<td style="font-size:12px;color:var(--text3)">' + esc(u.email) + '</td>' +
+          '<td style="font-size:12px;color:var(--text3)">' + fmtDate(u.created_at) + '</td>' +
+          '<td style="font-size:12px;color:var(--text3)">' + fmtDate(u.last_login) + '</td>' +
+          '<td style="text-align:center;color:var(--blue);font-weight:600">' + (u.sessions_count || 0) + '</td>' +
+          '<td style="text-align:center">' + (u.attempts_count || 0) + '</td>' +
+          '<td style="text-align:center;color:var(--green);font-weight:600">' + (u.completions_count || 0) + '</td>' +
+          '<td style="text-align:center;color:' + ((u.avg_risk_score || 0) > 60 ? 'var(--accent)' : (u.avg_risk_score || 0) > 30 ? 'var(--gold)' : 'var(--green)') + ';font-weight:600">' + (u.avg_risk_score || 0) + '</td>' +
+          '<td><button class="btn-del-user" data-action="del-user" data-user-id="' + esc(u._id || u.id) + '" data-user-name="' + esc(u.username) + '">Del</button></td>' +
+          '</tr>';
+      }).join('');
+    }
+
     // ══════════════════════════════════════════════════════════
     //  ADMIN DELETE OPERATIONS (Single source of truth)
     // ══════════════════════════════════════════════════════════
-
+    async function delUser(userId, username) {
+      showConfirm({
+        title: 'Delete User',
+        message: 'Permanently delete user "' + username + '" and ALL their data?',
+        details: '🗑 Username: <b>' + username + '</b><br>🗑 All their sessions<br>🗑 All their attempts<br>🗑 All their game results<br><br>⛔ This action cannot be undone.',
+        icon: '👤',
+        okText: 'Delete User',
+        danger: true,
+        callback: async (confirmed) => {
+          if (!confirmed) return;
+          
+          const token = localStorage.getItem(LS_ADMIN_TOKEN);
+          
+          if (API_ENABLED && token && token !== 'local-mode') {
+            try {
+              const res = await fetch(API_BASE + '/admin/user/' + encodeURIComponent(userId), {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + token }
+              });
+              const data = await res.json();
+              if (data.ok) {
+                showToast('User "' + username + '" deleted', 'ok', 'User Deleted');
+                loadAdminData();
+                return;
+              } else if (res.status === 401) {
+                showToast('Please login again', 'err', 'Session Expired');
+                localStorage.removeItem(LS_ADMIN_TOKEN);
+                return;
+              } else if (res.status === 404) {
+                showToast('Admin user route not found - need to add it', 'err', 'Server Error');
+                return;
+              }
+            } catch (e) {
+              console.warn('API delete user failed:', e.message);
+            }
+          }
+          
+          showToast('Cannot delete user in localStorage mode', 'err', 'Not Supported');
+        }
+      });
+    }
     async function delSession(sid) {
       showConfirm({
         title: 'Delete Session',
@@ -5257,6 +5332,7 @@
 
 
     // ─── EVENT DELEGATION FOR DYNAMICALLY GENERATED BUTTONS ───
+        // ─── EVENT DELEGATION FOR DYNAMICALLY GENERATED BUTTONS ───
     document.addEventListener('click', function (e) {
       const btn = e.target.closest('[data-action]');
       if (!btn) return;
@@ -5270,6 +5346,10 @@
         const modId = btn.dataset.modId;
         const modTitle = btn.dataset.modTitle || 'this module';
         if (modId) delModuleData(parseInt(modId), modTitle);
+      } else if (action === 'del-user') {
+        const userId = btn.dataset.userId;
+        const userName = btn.dataset.userName || 'this user';
+        if (userId) delUser(userId, userName);
       }
     });
 
