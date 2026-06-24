@@ -48,13 +48,12 @@ app.get('/api/health', (req, res) => {
 
 // Mount route files (we'll create these next)
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api/auth', require('./routes/userAuth'));
+app.use('/api/user', require('./routes/userAuth'));
 app.use('/api/session', require('./routes/sessions'));
 app.use('/api/attempt', require('./routes/attempts'));
 app.use('/api/game', require('./routes/games'));
 app.use('/api/modules', require('./routes/modules'));
 app.use('/api/admin', require('./routes/admin'));
-app.use('/api/user', require('./routes/userAuth'));
 // ─── ERROR HANDLING ────────────────────────────────────────────────────────
 
 // 404 handler

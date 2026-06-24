@@ -3477,14 +3477,19 @@
     // ── Session API (replaces apiPost /session/start) ──────────────────────────
     // ── Session API (Hybrid: API first, localStorage fallback) ────────────────
     async function localSessionStart(existing_id) {
-      // Try API first
-      if (API_ENABLED) {
-        try {
-          const res = await fetch(API_BASE + '/session/start', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ session_id: existing_id || null })
-          });
+  if (API_ENABLED) {
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const userToken = localStorage.getItem(LS_USER_TOKEN);
+      if (userToken) {
+        headers['Authorization'] = 'Bearer ' + userToken;
+      }
+      
+      const res = await fetch(API_BASE + '/session/start', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ session_id: existing_id || null })
+      });
           const data = await res.json();
           if (data.ok) {
             // Also save to localStorage as cache
@@ -3519,14 +3524,19 @@
     // ── Attempt API (replaces apiPost /module/attempt) ─────────────────────────
     // ── Attempt API (Hybrid: API first, localStorage fallback) ────────────────
     async function localLogAttempt(data) {
-      // Try API first
-      if (API_ENABLED && state.sessionId) {
-        try {
-          const res = await fetch(API_BASE + '/attempt', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-          });
+  if (API_ENABLED && state.sessionId) {
+    try {
+      const headers = { 'Content-Type': 'application/json' };
+      const userToken = localStorage.getItem(LS_USER_TOKEN);
+      if (userToken) {
+        headers['Authorization'] = 'Bearer ' + userToken;
+      }
+      
+      const res = await fetch(API_BASE + '/attempt', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(data)
+      });
           const json = await res.json();
           if (json.ok) {
             return { ok: true, from_api: true };
