@@ -5017,7 +5017,8 @@
                 total_sessions: sessions.sessions?.length || 0,
                 total_submissions: stats.stats?.total_submissions || 0,
                 total_completions: stats.stats?.total_modules_completed || 0,
-                avg_risk_score: stats.stats?.avg_risk_score || 0
+                avg_risk_score: stats.stats?.avg_risk_score || 0,
+                total_users: users.users?.length || 0
               },
               recent: (recent.attempts || []).map(a => ({
                 ...a,
@@ -5026,7 +5027,7 @@
                 difficulty: a.difficulty || '—'
               })),
               byModule: [],
-              sessions: sessions.sessions || []
+              sessions: sessions.sessions || [],users: users.users || []
             };
 
             adminData = formatted;
