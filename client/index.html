@@ -4127,7 +4127,7 @@
         sessions: sessionList
       };
     }
-
+saveState();
     // ── Delete helpers ─────────────────────────────────────────────────────────
     function localDelSession(sid) {
       const sessions = getAllSessions(); delete sessions[sid]; lsSet(LS_SESSIONS, sessions);
@@ -5135,6 +5135,8 @@
       </div>
     </div>`).join('');
     }
+    // After rendering modules, update UI with loaded state
+updateProgressDisplay();
 
     // ─── SCAM INFO DATA ─────────────────────────────────────────────────────────
     const SCAM_INFO = {
@@ -5543,8 +5545,47 @@
       go('info');
     }
 
+// ─── STATE PERSISTENCE ─────────────────────────────────────
+const STATE_KEY = 'scamshield_state';
 
+function saveState() {
+  try {
+    const toSave = {
+      currentUser: state.currentUser,
+      sessionId: state.sessionId,
+      completed: state.completed,
+      risk: state.risk,
+      games_played: state.games_played,
+      total_score: state.total_score
+    };
+    localStorage.setItem(STATE_KEY, JSON.stringify(toSave));
+  } catch (e) {
+    console.warn('Failed to save state:', e);
+  }
+}
 
+function loadState() {
+  try {
+    const saved = localStorage.getItem(STATE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.currentUser) state.currentUser = parsed.currentUser;
+      if (parsed.sessionId) state.sessionId = parsed.sessionId;
+      if (parsed.completed) state.completed = parsed.completed;
+      if (parsed.risk !== undefined) state.risk = parsed.risk;
+      if (parsed.games_played) state.games_played = parsed.games_played;
+      if (parsed.total_score !== undefined) state.total_score = parsed.total_score;
+      console.log('State restored from localStorage');
+    }
+  } catch (e) {
+    console.warn('Failed to load state:', e);
+  }
+}
+
+// Call loadState on page load
+loadState();
+// After loadState() restores from localStorage
+updateProgressDisplay();
     // ─── START MODULE ────────────────────────────────────────────────────────────
 
     function startModule(id) {
@@ -6915,6 +6956,22 @@ document.addEventListener('keydown', function(e) {
       }
     };
 
+    function updateProgressDisplay() {
+  // Update nav bar
+  const doneEl = document.getElementById('nav-done');
+  if (doneEl) doneEl.textContent = state.completed.length + '/23';
+  
+  const riskEl = document.getElementById('nav-risk');
+  if (riskEl) {
+    riskEl.textContent = 'Risk: ' + state.risk;
+    riskEl.style.color = state.risk > 60 ? 'var(--accent)' : state.risk > 30 ? 'var(--gold)' : 'var(--green)';
+  }
+  
+  // Re-render modules to show completion status
+  if (typeof renderModules === 'function') {
+    renderModules();
+  }
+}
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
