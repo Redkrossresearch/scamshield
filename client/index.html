@@ -5653,26 +5653,30 @@
 
       if (API_ENABLED && token && token !== 'local-mode') {
         try {
-          const [statsRes, recentRes, sessionsRes, usersRes] = await Promise.all([
-            fetch(API_BASE + '/admin/stats', {
-              headers: { 'Authorization': 'Bearer ' + token }
-            }),
-            fetch(API_BASE + '/admin/recent', {
-              headers: { 'Authorization': 'Bearer ' + token }
-            }),
-            fetch(API_BASE + '/admin/sessions', {
-              headers: { 'Authorization': 'Bearer ' + token }
-            }),
-            fetch(API_BASE + '/admin/users', {
-              headers: { 'Authorization': 'Bearer ' + token }
-            })
-          ]);
+                  const [statsRes, recentRes, sessionsRes, usersRes, byModuleRes] = await Promise.all([
+          fetch(API_BASE + '/admin/stats', {
+            headers: { 'Authorization': 'Bearer ' + token }
+          }),
+          fetch(API_BASE + '/admin/recent', {
+            headers: { 'Authorization': 'Bearer ' + token }
+          }),
+          fetch(API_BASE + '/admin/sessions', {
+            headers: { 'Authorization': 'Bearer ' + token }
+          }),
+          fetch(API_BASE + '/admin/users', {
+            headers: { 'Authorization': 'Bearer ' + token }
+          }),
+          fetch(API_BASE + '/admin/byModule', {
+            headers: { 'Authorization': 'Bearer ' + token }
+          })
+        ]);
 
-          if (statsRes.ok && recentRes.ok && sessionsRes.ok) {
+                    if (statsRes.ok && recentRes.ok && sessionsRes.ok) {
             const stats = await statsRes.json();
             const recent = await recentRes.json();
             const sessions = await sessionsRes.json();
             const users = await usersRes.json();
+            const byModule = byModuleRes.ok ? await byModuleRes.json() : { byModule: [] };
 
             // Format data for the existing render functions
             const formatted = {
@@ -5690,8 +5694,9 @@
                 module_tag: a.module_tag || '—',
                 difficulty: a.difficulty || '—'
               })),
-              byModule: [],
-              sessions: sessions.sessions || [], users: users.users || []
+              byModule: byModule.byModule || [],
+              sessions: sessions.sessions || [],
+              users: users.users || []
             };
 
             adminData = formatted;

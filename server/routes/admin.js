@@ -201,6 +201,83 @@ router.get('/sessions', async (req, res) => {
   }
 });
 
+// ─── GET /api/admin/byModule ─────────────────────────────────────────────────
+// Get statistics grouped by module
+router.get('/byModule', authAdmin, async (req, res) => {
+  try {
+    const byModule = await Attempt.aggregate([
+      {
+        $group: {
+          _id: '$module_id',
+          attempts: { $sum: 1 },
+          completions: {
+            $sum: { $cond: [{ $eq: ['$submitted', true] }, 1, 0] }
+          },
+          risk_sum: {
+            $sum: { $cond: [{ $eq: ['$submitted', true] }, '$risk_score', 0] }
+          },
+          quiz_sum: {
+            $sum: {
+              $cond: [
+                { $gt: ['$quiz_total', 0] },
+                { $multiply: [{ $divide: ['$quiz_score', '$quiz_total'] }, 100] },
+                0
+              ]
+            }
+          },
+          quiz_count: {
+            $sum: { $cond: [{ $gt: ['$quiz_total', 0] }, 1, 0] }
+          }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          module_id: '$_id',
+          attempts: 1,
+          completions: 1,
+          avg_risk: {
+            $cond: [
+              { $gt: ['$completions', 0] },
+              { $round: [{ $divide: ['$risk_sum', '$completions'] }, 0] },
+              0
+            ]
+          },
+          avg_quiz_pct: {
+            $cond: [
+              { $gt: ['$quiz_count', 0] },
+              { $round: [{ $divide: ['$quiz_sum', '$quiz_count'] }, 0] },
+              0
+            ]
+          }
+        }
+      },
+      { $sort: { module_id: 1 } }
+    ]);
+
+    // Enrich with module metadata (title, tag, difficulty)
+    const Module = require('../models/Module');
+    const modules = await Module.find({});
+    const moduleMap = {};
+    modules.forEach(m => { moduleMap[m.module_id] = m; });
+
+    const enriched = byModule.map(stat => {
+      const meta = moduleMap[stat.module_id] || {};
+      return {
+        ...stat,
+        module_title: meta.title || `Module ${stat.module_id}`,
+        module_tag: meta.tag || '—',
+        difficulty: meta.difficulty || 'med'
+      };
+    });
+
+    res.json({ ok: true, byModule: enriched });
+  } catch (err) {
+    console.error('byModule error:', err);
+    res.status(500).json({ ok: false, err: 'Failed to fetch module stats.' });
+  }
+});
+
 // ─── GET /api/admin/modules ────────────────────────────────────────────────
 // Module-wise analytics
 router.get('/modules', async (req, res) => {
