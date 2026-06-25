@@ -5546,6 +5546,7 @@ updateProgressDisplay();
     }
 
 // ─── STATE PERSISTENCE ─────────────────────────────────────
+// ─── STATE PERSISTENCE ─────────────────────────────────────
 const STATE_KEY = 'scamshield_state';
 
 function saveState() {
@@ -5555,8 +5556,8 @@ function saveState() {
       sessionId: state.sessionId,
       completed: state.completed,
       risk: state.risk,
-      games_played: state.games_played,
-      total_score: state.total_score
+      games_played: state.games_played || [],
+      total_score: state.total_score || 0
     };
     localStorage.setItem(STATE_KEY, JSON.stringify(toSave));
   } catch (e) {
@@ -5575,17 +5576,34 @@ function loadState() {
       if (parsed.risk !== undefined) state.risk = parsed.risk;
       if (parsed.games_played) state.games_played = parsed.games_played;
       if (parsed.total_score !== undefined) state.total_score = parsed.total_score;
-      console.log('State restored from localStorage');
     }
   } catch (e) {
     console.warn('Failed to load state:', e);
   }
 }
 
-// Call loadState on page load
+function updateProgressDisplay() {
+  const doneEl = document.getElementById('nav-done');
+  if (doneEl) doneEl.textContent = (state.completed ? state.completed.length : 0) + '/23';
+  
+  const riskEl = document.getElementById('nav-risk');
+  if (riskEl) {
+    const risk = state.risk || 0;
+    riskEl.textContent = 'Risk: ' + risk;
+    riskEl.style.color = risk > 60 ? 'var(--accent)' : risk > 30 ? 'var(--gold)' : 'var(--green)';
+  }
+  
+  if (typeof renderModules === 'function') {
+    renderModules();
+  }
+}
+
+// Load state on page load
 loadState();
-// After loadState() restores from localStorage
 updateProgressDisplay();
+
+// After loadState() restores from localStorage
+
     // ─── START MODULE ────────────────────────────────────────────────────────────
 
     function startModule(id) {
