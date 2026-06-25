@@ -6343,9 +6343,12 @@
           '<td style="text-align:center;color:var(--blue);font-weight:600">' + (u.sessions_count || 0) + '</td>' +
           '<td style="text-align:center">' + (u.attempts_count || 0) + '</td>' +
           '<td style="text-align:center;color:var(--green);font-weight:600">' + (u.completions_count || 0) + '</td>' +
-          '<td style="text-align:center;color:' + ((u.avg_risk_score || 0) > 60 ? 'var(--accent)' : (u.avg_risk_score || 0) > 30 ? 'var(--gold)' : 'var(--green)') + ';font-weight:600">' + (u.avg_risk_score || 0) + '</td>' +
-          '<td><button class="btn-view-user" data-user-id="' + esc(u._id || u.id) + '" style="background:rgba(99,102,241,.15);color:#a5b4fc;border:1px solid rgba(99,102,241,.3);padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;margin-right:4px">📊 View</button>' +
-          '<button class="btn-del-user" data-action="del-user" data-user-id="' + esc(u._id || u.id) + '" data-user-name="' + esc(u.username) + '">Del</button></td>' +
+          '<td style="text-align:center;color:' + ((u.avg_risk_score || 0) > 60 ? 'var(--accent)' : (u.avg_risk_score || 0) > 30 ? 'var(--gold)' : 'var(--green)') + ';font-weight:600">' + (u.avg_risk_score || 0) + '<td>' +
+          '<div style="display: flex; gap: 6px; align-items: center; flex-wrap: nowrap;">' +
+          '<button class="btn-view-user" data-user-id="' + esc(u._id || u.id) + '" style="background:rgba(99,102,241,.15);color:#a5b4fc;border:1px solid rgba(99,102,241,.3);padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;">📊 View</button>' +
+          '<button class="btn-del-user" data-action="del-user" data-user-id="' + esc(u._id || u.id) + '" data-user-name="' + esc(u.username) + '" style="padding:5px 10px;white-space:nowrap;">Del</button>' +
+          '</div>' +
+          '</td>' +
           '</tr>';
       }).join('');
 
@@ -7025,21 +7028,21 @@
     };
 
     function updateProgressDisplay() {
-  // Update nav bar
-  const doneEl = document.getElementById('nav-done');
-  if (doneEl) doneEl.textContent = state.completed.length; // 🟢 Removed the + '/23'
-  
-  const riskEl = document.getElementById('nav-risk');
-  if (riskEl) {
-    riskEl.textContent = state.risk; // 🟢 Removed the 'Risk: ' +
-    riskEl.style.color = state.risk > 60 ? 'var(--accent)' : state.risk > 30 ? 'var(--gold)' : 'var(--green)';
-  }
-  
-  // Re-render modules to show completion status
-  if (typeof renderModules === 'function') {
-    renderModules();
-  }
-}
+      // Update nav bar
+      const doneEl = document.getElementById('nav-done');
+      if (doneEl) doneEl.textContent = state.completed.length; // 🟢 Removed the + '/23'
+
+      const riskEl = document.getElementById('nav-risk');
+      if (riskEl) {
+        riskEl.textContent = state.risk; // 🟢 Removed the 'Risk: ' +
+        riskEl.style.color = state.risk > 60 ? 'var(--accent)' : state.risk > 30 ? 'var(--gold)' : 'var(--green)';
+      }
+
+      // Re-render modules to show completion status
+      if (typeof renderModules === 'function') {
+        renderModules();
+      }
+    }
   </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
